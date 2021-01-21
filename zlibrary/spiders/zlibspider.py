@@ -14,7 +14,7 @@ class ZlibSpider(scrapy.Spider):
     start_urls = ['https://b-ok.africa/categories']
     custom_settings = {
         'CONCURRENT_REQUEST_PER_DOMAIN': 1,
-        'DOWNLOAD_DELAY': 5
+        'DOWNLOAD_DELAY': 3
     }
     scraped_books = []
 
@@ -42,35 +42,29 @@ class ZlibSpider(scrapy.Spider):
         for each in nextpage:
             yield response.follow(each, self.sectionparse, headers=self.headers,
                                   cb_kwargs=dict(pagination=True))
-            break
+            
 
     def sectionparse(self, response, pagination):
         bookpage = response.xpath('//table//table//table//h3/a/@href').getall()
 
         for each in bookpage:
             yield response.follow(each, self.bookparse, headers=self.headers)
-            break
+            
 
         if pagination:
             s = response.xpath('//script[contains(., "?page=%number%")]/text()').get()
-            print('yes pagination')
             if s:
                 pages_span = pagination_count(s)
-                print(pages_span)
 
                 if pages_span:
                     page_links = []
                     for i in range(pages_span)[1:]:
                         page_url = response.url + '?page=' + str(i + 1)
                         page_links.append(page_url)
-                    print('No')
+                    
                     for page in page_links:
-                        print(page_links)
                         yield response.follow(page, self.sectionparse, headers=self.headers,
                                               cb_kwargs=dict(pagination=False))
-                        print(page)
-                        break
-
 
     def bookparse(self, response):
 
